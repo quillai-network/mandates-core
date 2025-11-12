@@ -1,6 +1,6 @@
 {
     "name": "@quillai-network/mandates-core",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Core SDK for Mandates, create, canonicalize (JCS), hash, sign (EIP-191), and verify immutable mandate documents with CAIP-10 identities.",
     "type": "module",
     "license": "MIT",
