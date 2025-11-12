@@ -16,11 +16,13 @@
         }
     ],
     "repository": {
-        "type":"git",
-        "url":"https://github.com/quillai-network/mandates-core.git"
+        "type": "git",
+        "url": "https://github.com/quillai-network/mandates-core.git"
     },
     "homepage": "https://github.com/quillai-network/mandates-core#readme",
-    "bugs": { "url": "https://github.com/quillai-network/mandates-core/issues" },
+    "bugs": {
+        "url": "https://github.com/quillai-network/mandates-core/issues"
+    },
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
@@ -30,9 +32,13 @@
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "files": [
-        "dist", "LICENSE", "README.md"
+        "dist",
+        "LICENSE",
+        "README.md"
     ],
-    "publishConfig": { "access": "public" },
+    "publishConfig": {
+        "access": "public"
+    },
     "sideEffects": false,
     "engines": {
         "node": ">=18"
@@ -42,8 +48,6 @@
         "typecheck": "tsc -p tsconfig.json --noEmit",
         "dev": "vitest watch",
         "test": "vitest run",
-        "lint": "eslint . --ext .ts",
-        "lint:fix": "eslint . --ext .ts --fix",
         "clean": "rimraf dist",
         "prepublishOnly": "npm run clean && npm run build && npm run test"
     },
@@ -53,16 +57,9 @@
         "ulid": "^2.4.0"
     },
     "devDependencies": {
-        "@eslint/js": "^9.39.1",
         "@types/node": "^20.11.30",
-        "@typescript-eslint/eslint-plugin": "^8.46.3",
-        "@typescript-eslint/parser": "^8.46.3",
-        "eslint": "^9.39.1",
-        "eslint-config-prettier": "^9.1.2",
-        "eslint-plugin-import": "^2.32.0",
         "rimraf": "^6.0.1",
         "typescript": "^5.9.3",
-        "typescript-eslint": "^8.46.3",
         "vitest": "^2.1.1"
     }
 }
