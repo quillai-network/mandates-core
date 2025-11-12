@@ -1,0 +1,64 @@
+{
+    "name": "@quillai-network/mandates-core",
+    "version": "0.1.0",
+    "description": "Core SDK for Mandates, create, canonicalize (JCS), hash, sign (EIP-191), and verify immutable mandate documents with CAIP-10 identities.",
+    "type": "module",
+    "license": "MIT",
+    "author": "QuillAINetwork",
+    "contributors": [
+        {
+            "name": "Akshat Mishra",
+            "url": "https://github.com/Akshat-Mishra101"
+        },
+        {
+            "name": "Akshay Dev H",
+            "url": "https://github.com/akshaydevh"
+        }
+    ],
+    "repository": "https://github.com/quillai-network/mandates-core",
+    "homepage": "https://quillai-network.github.io/mandate-specs/",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "publishConfig": { "access": "public" },
+    "sideEffects": false,
+    "engines": {
+        "node": ">=18"
+    },
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "typecheck": "tsc -p tsconfig.json --noEmit",
+        "dev": "vitest watch",
+        "test": "vitest run",
+        "lint": "eslint . --ext .ts",
+        "lint:fix": "eslint . --ext .ts --fix",
+        "clean": "rimraf dist",
+        "prepublishOnly": "npm run clean && npm run build && npm run test"
+    },
+    "dependencies": {
+        "canonicalize": "^2.0.0",
+        "ethers": "^6.13.0",
+        "ulid": "^2.4.0"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.39.1",
+        "@types/node": "^20.11.30",
+        "@typescript-eslint/eslint-plugin": "^8.46.3",
+        "@typescript-eslint/parser": "^8.46.3",
+        "eslint": "^9.39.1",
+        "eslint-config-prettier": "^9.1.2",
+        "eslint-plugin-import": "^2.32.0",
+        "rimraf": "^6.0.1",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.46.3",
+        "vitest": "^2.1.1"
+    }
+}
