@@ -1,6 +1,6 @@
 # @quillai-network/mandates-core
 
-[![npm version](https://img.shields.io/npm/v/@quillai-network/mandates-core)](https://www.npmjs.com/package/@quillai-network/mandates-core) ![License](https://img.shields.io/badge/license-MIT-blue.svg) [![ERC-8004 v1.0](https://img.shields.io/badge/ERC--8004-v1.0-success.svg)](https://eips.ethereum.org/EIPS/eip-8004)
+[![npm version](https://badge.fury.io/js/@quillai-network%2Fmandates-core.svg)](https://badge.fury.io/js/@quillai-network%2Fmandates-core) ![License](https://img.shields.io/badge/license-MIT-blue.svg) [![ERC-8004 v1.0](https://img.shields.io/badge/ERC--8004-v1.0-success.svg)](https://eips.ethereum.org/EIPS/eip-8004)
 
 
 Core SDK for creating, signing, and verifying **Mandates** — deterministic agreements between AI or human agents, built for [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004).
