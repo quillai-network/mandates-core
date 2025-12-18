@@ -4,10 +4,21 @@ export type Hex = `0x${string}`;
 export type CAIP10 = `eip155:${number}:${`0x${string}`}`;
 export type PrimitiveKind = string; // e.g. "swap@1"
 
-export interface PrimitiveCore<K extends PrimitiveKind = PrimitiveKind, P = any> {
-  kind: K;               // discriminator your registry will match on
-  payload: P;            // task-specific data
-}
+export type PrimitiveCore<TPayload = Record<string, unknown>> = {
+  kind: string;
+  payload: TPayload;
+};
+
+export type PrimitivesRegistry = {
+  specVersion: string;
+  primitives: Array<{
+    kind: string;
+    name: string;
+    version: number;
+    schemaPath: string;
+    description?: string;
+  }>;
+};
 
 
 export type Core = PrimitiveCore;  
