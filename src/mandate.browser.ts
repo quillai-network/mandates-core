@@ -1,42 +1,14 @@
-// Handle both ESM and CommonJS contexts
-import { createRequire } from "node:module";
-import { pathToFileURL } from "node:url";
-
-// Get the appropriate require function for the current context
-function getRequire(): NodeJS.Require{
-  // Check if we're in a CommonJS context (require is available globally)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cjsRequire = (globalThis as any).require || (typeof require !== "undefined" ? require : undefined);
-  if (cjsRequire && typeof cjsRequire.resolve === "function") {
-    // CommonJS context - use global require directly
-    return cjsRequire;
-  }
-  // ESM context - create require from import.meta.url or fallback
-  let url: string | undefined;
-  if (typeof import.meta !== "undefined" && import.meta.url) {
-    url = import.meta.url;
-  } else {
-    // Fallback: try to construct URL from require.main.filename (should work in CJS runtime)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mainFilename = cjsRequire?.main?.filename;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const filename = (typeof (globalThis as any).__filename !== "undefined" 
-      ? (globalThis as any).__filename 
-      : mainFilename) as string | undefined;
-    if (filename) {
-      url = pathToFileURL(filename).href;
-    }
-  }
-  if (!url) {
-    throw new Error("Cannot determine module URL for createRequire. This package requires Node.js with ESM support or CommonJS with __filename/require.main.");
-  }
-  return createRequire(url);
-}
-
-const requireFn = getRequire();
-const canonicalize: (input: unknown) => string | undefined = requireFn("canonicalize");
-const { ulid } = requireFn("ulid") as { ulid: () => string };
-import { HDNodeWallet, keccak256, toUtf8Bytes, verifyMessage, verifyTypedData, type TypedDataDomain } from "ethers";
+// Browser-friendly Mandate implementation: no node:module, no dynamic require
+import canonicalizeModule from "canonicalize";
+import { ulid } from "ulid";
+import {
+  HDNodeWallet,
+  keccak256,
+  toUtf8Bytes,
+  verifyMessage,
+  verifyTypedData,
+  type TypedDataDomain,
+} from "ethers";
 import type {
   Bytes32,
   Hex,
@@ -47,21 +19,25 @@ import type {
   Signature,
   SigAlg,
   VerifyAllResult,
-  VerifyResult
+  VerifyResult,
 } from "./types.js";
 
 import { addrFromCaip10, deepClone } from "./utils.js";
 
-
-// Internal helpers
+// Internal helpers (same logic as node variant)
 function canonicalizeForHash(doc: Partial<MandateJSON>): string {
   const m = deepClone(doc);
   // spec: exclude signatures from the signing payload // @ts-expect-error - may exist
   delete (m as Partial<MandateJSON>).signatures;
+  const canonicalize =
+    typeof canonicalizeModule === "function"
+      ? canonicalizeModule
+      : (canonicalizeModule.default as (input: unknown) => string | undefined);
   const jcs = canonicalize(m);
   if (!jcs) throw new Error("canonicalize() returned empty string");
   return jcs;
 }
+
 function computeMandateHash(doc: Partial<MandateJSON>): Bytes32 {
   const jcs = canonicalizeForHash(doc);
   return keccak256(toUtf8Bytes(jcs)) as Bytes32;
@@ -73,7 +49,7 @@ export class Mandate {
   constructor(init: MandateInit) {
     if (!init.client || !init.server) throw new Error("client and server are required (CAIP-10)");
     if (!init.deadline) throw new Error("deadline (ISO 8601) is required");
-    if (init.version && init.version !== '0.1.0') throw new Error("version must be 0.1.0");
+    if (init.version && init.version !== "0.1.0") throw new Error("version must be 0.1.0");
 
     if (!init.core) throw new Error("core is required");
     if (!init.core.kind) throw new Error("core.kind is required");
@@ -87,7 +63,7 @@ export class Mandate {
       createdAt: init.createdAt ?? new Date().toISOString(),
       deadline: init.deadline,
       intent: init.intent ?? "",
-      core: init.core ?? {}
+      core: init.core ?? {},
     };
 
     this.m = { ...base };
@@ -126,7 +102,7 @@ export class Mandate {
     role: "client" | "server",
     wallet: HDNodeWallet,
     alg: SigAlg = "eip191",
-    domain?: TypedDataDomain
+    domain?: TypedDataDomain,
   ): Promise<Signature> {
     const jcs = this.toCanonicalString();
     const mandateHash = keccak256(toUtf8Bytes(jcs)) as Bytes32;
@@ -140,7 +116,7 @@ export class Mandate {
         throw new Error("EIP-712 requires a domain with chainId");
       }
       const types: Record<string, Array<{ name: string; type: string }>> = {
-        Mandate: [{ name: "mandateHash", type: "bytes32" }]
+        Mandate: [{ name: "mandateHash", type: "bytes32" }],
       };
       const value = { mandateHash };
       signature = (await wallet.signTypedData(domain, types, value)) as Hex;
@@ -185,7 +161,7 @@ export class Mandate {
         throw new Error("EIP-712 verification requires domain with chainId");
       }
       const types: Record<string, Array<{ name: string; type: string }>> = {
-        Mandate: [{ name: "mandateHash", type: "bytes32" }]
+        Mandate: [{ name: "mandateHash", type: "bytes32" }],
       };
       const value = { mandateHash };
       recovered = verifyTypedData(domain, types, value, signature);
@@ -194,7 +170,9 @@ export class Mandate {
     }
 
     // 3) compare against CAIP-10 role address
-    const expected = addrFromCaip10(role === "client" ? this.m.client : this.m.server).toLowerCase();
+    const expected = addrFromCaip10(
+      role === "client" ? this.m.client : this.m.server,
+    ).toLowerCase();
     if (recovered.toLowerCase() !== expected) {
       throw new Error(`${role} signature invalid: expected ${expected}, got ${recovered}`);
     }
@@ -205,12 +183,13 @@ export class Mandate {
   verifyAll(domainForClient?: TypedDataDomain, domainForServer?: TypedDataDomain): VerifyAllResult {
     return {
       client: this.verifyRole("client", domainForClient),
-      server: this.verifyRole("server", domainForServer)
+      server: this.verifyRole("server", domainForServer),
     };
   }
 
   // Factory
-  static fromObject(obj: MandateJSON | MandateBase & { signatures?: MandateSignatures }) {
+  static fromObject(obj: MandateJSON | (MandateBase & { signatures?: MandateSignatures })) {
     return new Mandate(obj as MandateInit);
   }
 }
+
