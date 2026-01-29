@@ -3,33 +3,81 @@ import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 
 // Get the appropriate require function for the current context
-function getRequire(): NodeJS.Require{
-  // Check if we're in a CommonJS context (require is available globally)
+function getRequire(): NodeJS.Require {
+  // Try to get require from various possible locations in CommonJS
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cjsRequire = (globalThis as any).require || (typeof require !== "undefined" ? require : undefined);
+  let cjsRequire: NodeJS.Require | undefined;
+  try {
+    // @ts-ignore - require may exist in CommonJS context
+    if (typeof require !== "undefined") {
+      // @ts-ignore
+      cjsRequire = require;
+    }
+  } catch {
+    // require not available
+  }
+  
+  // If require is available and has resolve, use it directly (CommonJS)
   if (cjsRequire && typeof cjsRequire.resolve === "function") {
-    // CommonJS context - use global require directly
     return cjsRequire;
   }
-  // ESM context - create require from import.meta.url or fallback
+  
+  // Otherwise, we need to create require using a file URL
+  // Try import.meta.url first (ESM)
   let url: string | undefined;
-  if (typeof import.meta !== "undefined" && import.meta.url) {
-    url = import.meta.url;
-  } else {
-    // Fallback: try to construct URL from require.main.filename (should work in CJS runtime)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mainFilename = cjsRequire?.main?.filename;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const filename = (typeof (globalThis as any).__filename !== "undefined" 
-      ? (globalThis as any).__filename 
-      : mainFilename) as string | undefined;
-    if (filename) {
-      url = pathToFileURL(filename).href;
+  try {
+    // @ts-ignore - import.meta may not exist in CJS bundle
+    if (typeof import.meta !== "undefined" && import.meta.url) {
+      // @ts-ignore
+      url = import.meta.url;
+    }
+  } catch {
+    // import.meta not available
+  }
+  
+  // If no URL yet, try CommonJS fallbacks
+  if (!url) {
+    // Try __filename (available in Node.js CommonJS)
+    // @ts-ignore - __filename may exist in CJS
+    if (typeof __filename !== "undefined") {
+      // @ts-ignore
+      url = pathToFileURL(__filename).href;
+    }
+    // Try require.main.filename (available when loaded via require)
+    else if (cjsRequire?.main?.filename) {
+      url = pathToFileURL(cjsRequire.main.filename).href;
+    }
+    // Try module.filename (available in Node.js CommonJS)
+    // @ts-ignore - module may exist in CJS
+    else if (typeof module !== "undefined" && module.filename) {
+      // @ts-ignore
+      url = pathToFileURL(module.filename).href;
+    }
+    // Last resort: try to get from Error stack trace (works in most Node.js contexts)
+    else {
+      try {
+        const stack = new Error().stack;
+        if (stack) {
+          const match = stack.match(/at .* \((.+):\d+:\d+\)/);
+          if (match && match[1]) {
+            const filePath = match[1];
+            if (filePath.startsWith("file://")) {
+              url = filePath;
+            } else {
+              url = pathToFileURL(filePath).href;
+            }
+          }
+        }
+      } catch {
+        // Stack trace method failed
+      }
     }
   }
+  
   if (!url) {
-    throw new Error("Cannot determine module URL for createRequire. This package requires Node.js with ESM support or CommonJS with __filename/require.main.");
+    throw new Error("Cannot determine module URL for createRequire. This package requires Node.js with ESM support or CommonJS with __filename/require.main/module.filename.");
   }
+  
   return createRequire(url);
 }
 
